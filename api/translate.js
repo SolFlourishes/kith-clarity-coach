@@ -7,7 +7,6 @@ function extractJson(text) {
     if (match && match[1]) {
         return match[1].trim();
     }
-    // If no markdown block is found, assume the whole string is the JSON
     return text.trim();
 }
 
@@ -19,11 +18,18 @@ async function getAiResponse(prompt) {
 
     try {
         const response = await axios.post(url, body, { headers });
-        if (response.data && response.data.candidates && response.data.candidates.length > 0) {
-            return response.data.candidates[0].content.parts[0].text;
+        
+        // **SAFETY CHECK ADDED**
+        // Check if the response was blocked by safety settings
+        if (!response.data.candidates || response.data.candidates.length === 0) {
+            console.error('Gemini API Blocked:', response.data.promptFeedback);
+            throw new Error('The request was blocked by the API\'s safety settings.');
         }
-        throw new Error('Invalid AI response structure');
+
+        return response.data.candidates[0].content.parts[0].text;
+
     } catch (error) {
+        // Log the detailed error, whether it's from safety or another network issue
         console.error('Gemini API Error:', error.response ? error.response.data : error.message);
         throw new Error('Failed to get response from AI');
     }
@@ -35,7 +41,6 @@ export default async function handler(req, res) {
         console.error('SERVER ERROR: VITE_GEMINI_API_KEY is not set.');
         return res.status(500).json({ message: 'Server configuration error: Missing Gemini API Key.' });
     }
-    console.log('Gemini API Key is present.');
     
     if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
     const { mode, text, context, interpretation, sender, receiver, senderNeurotype, receiverNeurotype, senderGeneration, receiverGeneration } = req.body;
@@ -47,7 +52,7 @@ export default async function handler(req, res) {
     }
     try {
         const aiResponseText = await getAiResponse(prompt);
-        const cleanedJsonText = extractJson(aiResponseText); // Clean the response
+        const cleanedJsonText = extractJson(aiResponseText);
         try {
             const jsonResponse = JSON.parse(cleanedJsonText);
             res.status(200).json(jsonResponse);
@@ -56,7 +61,11 @@ export default async function handler(req, res) {
              res.status(500).json({ message: 'Error parsing AI response.' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Error processing your request.' });
+        // Pass the more specific error message to the frontend if available
+        const errorMessage = error.message.includes('safety settings') 
+            ? 'Input blocked by safety filters. Please rephrase your text.'
+            : 'Error processing your request.';
+        res.status(500).json({ message: errorMessage });
     }
 }
 

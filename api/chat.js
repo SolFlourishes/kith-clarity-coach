@@ -8,10 +8,16 @@ async function getAiChatResponse(history) {
     const body = { contents, systemInstruction: { parts: [{ text: systemPrompt }] } };
     try {
         const response = await axios.post(url, body, { headers: { 'Content-Type': 'application/json' } });
-        if (response.data && response.data.candidates && response.data.candidates.length > 0) {
-            return response.data.candidates[0].content.parts[0].text;
+        
+        // **SAFETY CHECK ADDED**
+        if (!response.data.candidates || response.data.candidates.length === 0) {
+            console.error('Gemini API Blocked:', response.data.promptFeedback);
+            // Return a user-friendly message in the chat
+            return '<p>I\'m sorry, but I can\'t respond to that. The input was blocked by my safety filters. Could you please rephrase?</p>';
         }
-        throw new Error('Invalid AI response structure');
+
+        return response.data.candidates[0].content.parts[0].text;
+
     } catch (error) {
         console.error('Gemini API Error:', error.response ? error.response.data : error.message);
         throw new Error('Failed to get chat response from AI');
