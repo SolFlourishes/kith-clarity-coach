@@ -20,7 +20,7 @@ function TranslatePage() {
     const [isAdvancedMode, setIsAdvancedMode] = useState(false);
     const [senderStyle, setSenderStyle] = useState('let-ai-decide');
     const [receiverStyle, setReceiverStyle] = useState('indirect');
-    const generations = ['Gen Alpha', 'Gen Z', 'Xennial', 'Millennial', 'Gen X', 'Boomer', 'unsure'];
+    const generations = ['Gen Alpha', 'Gen Z', 'Millennial', 'Xennial', 'Gen X', 'Boomer', 'unsure'];
     const [senderNeurotype, setSenderNeurotype] = useState('unsure');
     const [receiverNeurotype, setReceiverNeurotype] = useState('unsure');
     const [senderGeneration, setSenderGeneration] = useState('unsure');
@@ -48,25 +48,17 @@ function TranslatePage() {
     }, [loading]);
 
     const handleCopy = (textToCopy, fieldName) => {
-        if (!navigator.clipboard) {
-            const textArea = document.createElement('textarea');
-            textArea.value = textToCopy;
-            document.body.appendChild(textArea);
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                alert(`Copied ${fieldName} to clipboard!`);
-            } catch (err) {
-                console.error('Fallback copy failed: ', err);
-            }
-            document.body.removeChild(textArea);
-            return;
-        }
-        navigator.clipboard.writeText(textToCopy).then(() => {
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
             alert(`Copied ${fieldName} to clipboard!`);
-        }, (err) => {
-            console.error('Async copy failed: ', err);
-        });
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+        document.body.removeChild(textArea);
     };
 
     const handleSubmit = async (event) => {
@@ -113,11 +105,12 @@ function TranslatePage() {
     const handleFeedbackSubmit = async (feedbackData) => {
         try {
             // Merge new feedback with any existing feedback for this session
-            const fullFeedback = { ...(aiResponse.feedback || {}), ...feedbackData };
-            await axios.post('/api/feedback', { ...fullFeedback, mode, version: '2.1.0' });
+            const currentFeedback = aiResponse.feedback || {};
+            const newFeedback = { ...currentFeedback, ...feedbackData };
+            await axios.post('/api/feedback', { ...newFeedback, mode, version: '2.1.0' });
             setFeedbackSuccess('Thank you! Your feedback has been saved.');
             // Keep AI response data but store feedback to prevent re-submission
-            setAiResponse(prev => ({ ...prev, feedback: fullFeedback })); 
+            setAiResponse(prev => ({ ...prev, feedback: newFeedback })); 
         } catch (err) {
             console.error('Failed to submit feedback', err);
             setError('Sorry, could not submit feedback.');
@@ -184,7 +177,7 @@ function TranslatePage() {
                             <div className="options" id="receiver-nt-select">{['autism', 'adhd', 'neurotypical', 'unsure'].map(nt => (<label key={`receiver-${nt}`} className={receiverNeurotype === nt ? 'selected' : ''}><input type="radio" name="receiver-nt" value={nt} checked={receiverNeurotype === nt} onChange={e => setReceiverNeurotype(e.target.value)} />{nt}</label>))}</div>
                         </div>
                         <div className="selector-group">
-                            <label>My Generation <span className="tooltip-container" aria-label="Generation information">(i)<span className="tooltip-text"><strong>Gen Alpha:</strong> ~2013+<br/><strong>Gen Z:</strong> ~1997-2012<br/><strong>Xennial:</strong> ~1977-1983<br/><strong>Millennial:</strong> ~1981-1996<br/><strong>Gen X:</strong> ~1965-1980<br/><strong>Boomer:</strong> ~1946-1964</span></span></label>
+                            <label>My Generation <span className="tooltip-container" aria-label="Generation information">(i)<span className="tooltip-text"><strong>Gen Alpha:</strong> ~2013+<br/><strong>Gen Z:</strong> ~1997-2012<br/><strong>Millennial:</strong> ~1981-1996<br/><strong>Xennial:</strong> ~1977-1983<br/><strong>Gen X:</strong> ~1965-1980<br/><strong>Boomer:</strong> ~1946-1964</span></span></label>
                             <div className="options">{generations.map(gen => (<label key={`sender-${gen}`} className={senderGeneration === gen ? 'selected' : ''}><input type="radio" name="sender-gen" value={gen} checked={senderGeneration === gen} onChange={e => setSenderGeneration(e.target.value)} />{gen}</label>))}</div>
                         </div>
                         <div className="selector-group">
