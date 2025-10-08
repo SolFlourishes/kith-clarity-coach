@@ -1,10 +1,71 @@
-.feedback-container { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; padding: 1.5rem; border-radius: 8px; background-color: var(--surface); }
-.feedback-container h4 { margin: 0; text-align: center; color: var(--text-secondary); }
-.star-rating { display: flex; justify-content: center; gap: 0.25rem; }
-.star-rating button { background: none; border: none; font-size: 2rem; cursor: pointer; padding: 0; color: var(--border); }
-.star-rating button.on { color: #facc15; /* Yellow-400 */ }
-.feedback-container form { display: flex; flex-direction: column; gap: 0.75rem; }
-.feedback-container textarea { min-height: 80px; background-color: var(--background); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 0.5rem; font-family: inherit; }
-.feedback-container button[type="submit"] { align-self: center; background-color: var(--primary); color: white; }
-.feedback-container button:disabled { background-color: var(--border); cursor: not-allowed; }
-.success-message { margin-top: 1.5rem; padding: 1rem; border-radius: 4px; text-align: center; background-color: var(--success-bg); border: 1px solid var(--success-border); color: var(--success-text); }
+.feedback-form {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.star-rating {
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.star-rating button {
+    background: none;
+    border: none;
+    font-size: 1.8rem; /* Slightly smaller stars */
+    cursor: pointer;
+    padding: 0 0.1rem;
+    color: var(--border);
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.star-rating button.on {
+    color: #facc15; /* Yellow-400 */
+}
+
+.feedback-form textarea {
+    min-height: 80px;
+    background-color: var(--background);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: 4px;
+    padding: 0.75rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+    resize: vertical;
+}
+
+.submit-feedback-button {
+    align-self: center;
+    background-image: linear-gradient(to right, #818cf8, #6366f1);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.submit-feedback-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.submit-feedback-button:disabled {
+    background-image: none;
+    background-color: var(--border) !important;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.feedback-form.submitted {
+    text-align: center;
+    padding: 1rem;
+    color: var(--success-text);
+    font-weight: bold;
+    opacity: 0.7;
+}

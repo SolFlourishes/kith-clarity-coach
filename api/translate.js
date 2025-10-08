@@ -33,7 +33,7 @@ async function getAiResponse(prompt) {
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
     
-    // **FINAL, MORE CONCISE PROMPT STRUCTURE**
+    // Updated to include analyzeContext
     const { mode, text, context, interpretation, analyzeContext, sender, receiver, senderNeurotype, receiverNeurotype, senderGeneration, receiverGeneration } = req.body;
     let prompt;
     if (mode === 'draft') {
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
             ---
             SENDER STYLE: ${sender}
             RECEIVER STYLE: ${receiver}
-            CONTEXT: ${analyzeContext}
+            SITUATION: ${analyzeContext}
             MESSAGE: ${text}
             MY INTERPRETATION: ${interpretation}
         `;

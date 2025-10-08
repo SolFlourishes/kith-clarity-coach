@@ -8,7 +8,7 @@ function ChangeLogPage() {
       <div className="log-entry">
         <h2>Version 2.1 (Beta)</h2>
         <ul>
-           <li><strong>Rebranding:</strong> Officially renamed the application from "The Neurotype Communicator" to "Kith Clarity Coach" to better reflect our brand and vision.</li>
+          <li><strong>Branding Update:</strong> Officially renamed from "The Neurotype Communicator" to the "Clarity Coach," a product by Kith, LLC.</li>
           <li>Redesigned Translate/Analyze page with an intuitive multi-box layout.</li>
           <li>Added "Advanced Mode" with Neurotype and Generation selectors.</li>
           <li>Re-implemented persistent "General Feedback" button and per-translation 5-star rating system, now powered by Firebase Firestore.</li>
@@ -27,7 +27,7 @@ function ChangeLogPage() {
        <div className="log-entry">
         <h2>Version 1.0 - 1.3 (Alpha)</h2>
         <ul>
-            <li>Initial release and establishment of all core features, homepage design, content pages, and Resend API integration for listserv.</li>
+            <li>Initial release of the Neurotype Communicator and establishment of all core features, homepage design, content pages, and Resend API integration for listserv.</li>
         </ul>
       </div>
     </div>

@@ -6,6 +6,7 @@ function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   return (
     <header className="app-header">
+      {/* 2. Update branding */}
       <Link to="/" className="logo-link">
         <div className="logo">KITH</div>
         <div className="product-name">Clarity Coach</div>
@@ -14,7 +15,7 @@ function Header() {
         <NavLink to="/translate/draft">Translate</NavLink>
         <NavLink to="/coach">Coach</NavLink>
         <div className="dropdown">
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="dropdown-toggle">More</button>
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="dropdown-toggle" aria-haspopup="true" aria-expanded={isMenuOpen}>More</button>
           {isMenuOpen && (
             <div className="dropdown-menu">
               <NavLink to="/how-to-use" onClick={() => setIsMenuOpen(false)}>How to Use</NavLink>
