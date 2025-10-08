@@ -1,5 +1,16 @@
 import axios from 'axios';
 
+// Helper function to extract JSON from a markdown-formatted string
+function extractJson(text) {
+    const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
+    const match = text.match(jsonRegex);
+    if (match && match[1]) {
+        return match[1].trim();
+    }
+    // If no markdown block is found, assume the whole string is the JSON
+    return text.trim();
+}
+
 async function getAiResponse(prompt) {
     const apiKey = process.env.VITE_GEMINI_API_KEY;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?key=${apiKey}`;
@@ -19,7 +30,6 @@ async function getAiResponse(prompt) {
 }
 
 export default async function handler(req, res) {
-    // DIAGNOSTIC LOGS
     console.log('--- /api/translate function invoked ---');
     if (!process.env.VITE_GEMINI_API_KEY) {
         console.error('SERVER ERROR: VITE_GEMINI_API_KEY is not set.');
@@ -37,11 +47,12 @@ export default async function handler(req, res) {
     }
     try {
         const aiResponseText = await getAiResponse(prompt);
+        const cleanedJsonText = extractJson(aiResponseText); // Clean the response
         try {
-            const jsonResponse = JSON.parse(aiResponseText);
+            const jsonResponse = JSON.parse(cleanedJsonText);
             res.status(200).json(jsonResponse);
         } catch (parseError) {
-             console.error("Failed to parse AI response:", aiResponseText);
+             console.error("Failed to parse AI response after cleaning:", cleanedJsonText);
              res.status(500).json({ message: 'Error parsing AI response.' });
         }
     } catch (error) {
