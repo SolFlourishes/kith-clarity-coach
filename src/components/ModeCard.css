@@ -1,0 +1,4 @@
+.mode-card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; text-align: left; text-decoration: none; color: var(--text-primary); transition: all 0.2s; display: block; }
+.mode-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.2); border-color: var(--primary); }
+.mode-card h3 { margin-top: 0; font-size: 1.8rem; }
+.mode-card p { color: var(--text-secondary); font-size: 1.1rem; }

@@ -1,0 +1,11 @@
+.content-page { text-align: left; max-width: 900px; margin: 2rem auto; padding: 2rem; background-color: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+.content-page .mission { font-size: 1.2rem; font-style: italic; color: var(--text-secondary); border-left: 3px solid var(--primary); padding-left: 1.5rem; margin: 2rem 0; }
+.content-page h1, .content-page h2 { margin-bottom: 1.5rem; }
+.content-page ul { list-style-type: disc; padding-left: 2rem; margin-top: 1rem; }
+.content-page li { margin-bottom: 0.75rem; line-height: 1.7; }
+.content-page strong { color: var(--primary); }
+.content-block { background-color: var(--background); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-top: 2rem; }
+.content-block-highlight { background-color: rgba(99, 102, 241, 0.1); border: 1px solid var(--primary); border-radius: 8px; padding: 1.5rem; margin-top: 2rem; }
+.log-entry { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+.section-header { margin-top: 3rem !important; }
+.app-type-header { color: var(--text-secondary) !important; font-style: italic; }
