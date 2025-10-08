@@ -2,7 +2,7 @@ import axios from 'axios';
 
 async function getAiChatResponse(history) {
     const apiKey = process.env.VITE_GEMINI_API_KEY;
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?key=${apiKey}`;
     const systemPrompt = `You are the Clarity Coach, an expert in neurodivergent-affirming communication. Your tone is empathetic, insightful, and supportive. Use HTML for formatting.`;
     const contents = history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.content }] }));
     const body = { contents, systemInstruction: { parts: [{ text: systemPrompt }] } };
