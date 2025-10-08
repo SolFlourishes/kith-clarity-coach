@@ -18,10 +18,15 @@ async function getAiClassification(text) {
     const body = { contents: [{ parts: [{ text: prompt }] }] };
     try {
         const response = await axios.post(url, body, { headers: { 'Content-Type': 'application/json' } });
-        if (response.data && response.data.candidates && response.data.candidates.length > 0) {
-            return response.data.candidates[0].content.parts[0].text;
+        
+        // **SAFETY CHECK ADDED**
+        if (!response.data.candidates || response.data.candidates.length === 0) {
+            console.error('Gemini API Blocked:', response.data.promptFeedback);
+            throw new Error('The request was blocked by the API\'s safety settings.');
         }
-        throw new Error('Invalid AI response structure');
+
+        return response.data.candidates[0].content.parts[0].text;
+
     } catch (error) {
         console.error('Gemini API Error:', error.response ? error.response.data : error.message);
         throw new Error('Failed to get classification from AI');
@@ -51,7 +56,10 @@ export default async function handler(req, res) {
             res.status(500).json({ message: 'Error parsing AI response.' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Error processing classification.' });
+        const errorMessage = error.message.includes('safety settings') 
+            ? 'Input blocked by safety filters. Please rephrase your text.'
+            : 'Error processing your request.';
+        res.status(500).json({ message: errorMessage });
     }
 }
 
