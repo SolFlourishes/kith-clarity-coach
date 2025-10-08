@@ -12,7 +12,7 @@ function HomePage() {
       <div className="mode-selection">
         <ModeCard title="Draft a Message" description="Translate your intent into a clear message tailored for your audience." linkTo="/translate/draft" />
         <ModeCard title="Analyze a Message" description="Decode the likely intent behind a message you've received." linkTo="/translate/analyze" />
-        <ModeCard title="Chat with the Coach" description="Get real-time advice on navigating a tricky conversation." linkTo="/chat" /> {/* Corrected Link */}
+        <ModeCard title="Chat with the Coach" description="Get real-time advice on navigating a tricky conversation." linkTo="/chat" />
       </div>
     </div>
   );

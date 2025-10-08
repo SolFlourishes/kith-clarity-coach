@@ -12,7 +12,7 @@ function Header() {
       </Link>
       <nav className="main-nav">
         <NavLink to="/translate/draft">Translate</NavLink>
-        <NavLink to="/chat">Chat</NavLink> {/* Corrected Link */}
+        <NavLink to="/chat">Chat</NavLink>
         <div className="dropdown">
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="dropdown-toggle" aria-haspopup="true" aria-expanded={isMenuOpen}>More</button>
           {isMenuOpen && (

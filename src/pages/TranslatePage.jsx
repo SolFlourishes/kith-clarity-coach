@@ -21,8 +21,9 @@ function TranslatePage() {
     const [senderStyle, setSenderStyle] = useState('let-ai-decide');
     const [receiverStyle, setReceiverStyle] = useState('indirect');
     const generations = ['Gen Alpha', 'Gen Z', 'Millennial', 'Xennial', 'Gen X', 'Boomer', 'unsure'];
-    const [senderNeurotype, setSenderNeurotype] = useState('unsure');
-    const [receiverNeurotype, setReceiverNeurotype] = useState('unsure');
+    const neurotypes = ['Autism', 'ADHD', 'Neurotypical', 'Unsure'];
+    const [senderNeurotype, setSenderNeurotype] = useState('Unsure');
+    const [receiverNeurotype, setReceiverNeurotype] = useState('Unsure');
     const [senderGeneration, setSenderGeneration] = useState('unsure');
     const [receiverGeneration, setReceiverGeneration] = useState('unsure');
     const [text, setText] = useState('');
@@ -104,12 +105,10 @@ function TranslatePage() {
 
     const handleFeedbackSubmit = async (feedbackData) => {
         try {
-            // Merge new feedback with any existing feedback for this session
             const currentFeedback = aiResponse.feedback || {};
             const newFeedback = { ...currentFeedback, ...feedbackData };
             await axios.post('/api/feedback', { ...newFeedback, mode, version: '2.1.0' });
             setFeedbackSuccess('Thank you! Your feedback has been saved.');
-            // Keep AI response data but store feedback to prevent re-submission
             setAiResponse(prev => ({ ...prev, feedback: newFeedback })); 
         } catch (err) {
             console.error('Failed to submit feedback', err);
@@ -169,12 +168,12 @@ function TranslatePage() {
                 {isAdvancedMode && (
                     <div className="advanced-options">
                         <div className="selector-group">
-                            <label htmlFor="sender-nt-select">My Neurotype</label>
-                            <div className="options" id="sender-nt-select">{['autism', 'adhd', 'neurotypical', 'unsure'].map(nt => (<label key={`sender-${nt}`} className={senderNeurotype === nt ? 'selected' : ''}><input type="radio" name="sender-nt" value={nt} checked={senderNeurotype === nt} onChange={e => setSenderNeurotype(e.target.value)} />{nt}</label>))}</div>
+                            <label htmlFor="sender-nt-select">My Neurotype <span className="tooltip-container" aria-label="Neurotype information">(i)<span className="tooltip-text"><strong>Autism:</strong> May prefer direct, literal language and find subtext difficult. <br/><br/><strong>ADHD:</strong> May communicate in non-linear ways, valuing passion and interest. <br/><br/><strong>Neurotypical:</strong> The most common neurological development.</span></span></label>
+                            <div className="options" id="sender-nt-select">{neurotypes.map(nt => (<label key={`sender-${nt}`} className={senderNeurotype === nt ? 'selected' : ''}><input type="radio" name="sender-nt" value={nt} checked={senderNeurotype === nt} onChange={e => setSenderNeurotype(e.target.value)} />{nt}</label>))}</div>
                         </div>
                         <div className="selector-group">
                             <label htmlFor="receiver-nt-select">Audience's Neurotype</label>
-                            <div className="options" id="receiver-nt-select">{['autism', 'adhd', 'neurotypical', 'unsure'].map(nt => (<label key={`receiver-${nt}`} className={receiverNeurotype === nt ? 'selected' : ''}><input type="radio" name="receiver-nt" value={nt} checked={receiverNeurotype === nt} onChange={e => setReceiverNeurotype(e.target.value)} />{nt}</label>))}</div>
+                            <div className="options" id="receiver-nt-select">{neurotypes.map(nt => (<label key={`receiver-${nt}`} className={receiverNeurotype === nt ? 'selected' : ''}><input type="radio" name="receiver-nt" value={nt} checked={receiverNeurotype === nt} onChange={e => setReceiverNeurotype(e.target.value)} />{nt}</label>))}</div>
                         </div>
                         <div className="selector-group">
                             <label>My Generation <span className="tooltip-container" aria-label="Generation information">(i)<span className="tooltip-text"><strong>Gen Alpha:</strong> ~2013+<br/><strong>Gen Z:</strong> ~1997-2012<br/><strong>Millennial:</strong> ~1981-1996<br/><strong>Xennial:</strong> ~1977-1983<br/><strong>Gen X:</strong> ~1965-1980<br/><strong>Boomer:</strong> ~1946-1964</span></span></label>
@@ -212,14 +211,14 @@ function TranslatePage() {
                     <div className="io-box">
                         <h3 className="box-title">{isDraftMode ? "How They Might Hear It (Explanation)" : "What They Likely Meant (Explanation)"}</h3>
                         <div className="ai-output" dangerouslySetInnerHTML={{ __html: aiResponse.explanation }} />
-                        <Feedback type="explanation" onSubmit={handleFeedbackSubmit} isSuccess={!!aiResponse.feedback?.explanationRating || !!feedbackSuccess} />
+                        <Feedback type="explanation" onSubmit={handleFeedbackSubmit} isSuccess={!!aiResponse.feedback?.explanationRating} />
                     </div>
                     <div className="io-box">
                         <h3 className="box-title">{isDraftMode ? "The Translation (Suggested Draft)" : "The Translation (Suggested Response)"}</h3>
                         <div className="ai-output" dangerouslySetInnerHTML={{ __html: aiResponse.response }} />
-                        <Feedback type="response" onSubmit={handleFeedbackSubmit} isSuccess={!!aiResponse.feedback?.responseRating || !!feedbackSuccess} />
+                        <Feedback type="response" onSubmit={handleFeedbackSubmit} isSuccess={!!aiResponse.feedback?.responseRating} />
                     </div>
-                    {feedbackSuccess && <div className="success-message-global" role="alert">{feedbackSuccess}</div>}
+                    {feedbackSuccess && !aiResponse.feedback?.explanationRating && !aiResponse.feedback?.responseRating && <div className="success-message-global" role="alert">{feedbackSuccess}</div>}
                 </div>
             )}
         </div>

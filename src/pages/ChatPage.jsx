@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import './ChatPage.css'; // Renamed from CoachPage.css
+import './ChatPage.css';
 
-function ChatPage() { // Renamed from CoachPage
+function ChatPage() {
   const [history, setHistory] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,7 +34,7 @@ function ChatPage() { // Renamed from CoachPage
   };
 
   return (
-    <div className="chat-page-container"> {/* Renamed class */}
+    <div className="chat-page-container">
       <h1>Chat with the Coach</h1>
       <div className="chat-window">
         {history.map((msg, index) => (<div key={index} className={`chat-message ${msg.role}`}><div className="message-content" dangerouslySetInnerHTML={{ __html: msg.content }} /></div>))}

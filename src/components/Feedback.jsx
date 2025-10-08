@@ -5,7 +5,6 @@ function Feedback({ type, onSubmit, isSuccess }) {
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
     const [hover, setHover] = useState(0);
-    const [submitted, setSubmitted] = useState(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -14,12 +13,10 @@ function Feedback({ type, onSubmit, isSuccess }) {
                 ? { explanationRating: rating, explanationComment: comment }
                 : { responseRating: rating, responseComment: comment };
             onSubmit(feedbackData);
-            setSubmitted(true); // Visually disable after one submission
         }
     };
 
-    // If global success state is true, show a disabled/thank you state
-    if (isSuccess || submitted) {
+    if (isSuccess) {
         return (
             <div className="feedback-form submitted">
                 <p>Thank you for your rating!</p>

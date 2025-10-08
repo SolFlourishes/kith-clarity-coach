@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Helper function to extract JSON from a markdown-formatted string
 function extractJson(text) {
     const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
     const match = text.match(jsonRegex);
@@ -15,10 +14,8 @@ async function getAiResponse(prompt) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?key=${apiKey}`;
     const headers = { 'Content-Type': 'application/json' };
     const body = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.4, topK: 1, topP: 1, maxOutputTokens: 2048 } };
-
     try {
         const response = await axios.post(url, body, { headers });
-        
         if (!response.data.candidates || response.data.candidates.length === 0) {
             console.error('Gemini API Blocked:', response.data.promptFeedback);
             throw new Error('The request was blocked by the API\'s safety settings.');
@@ -33,32 +30,40 @@ async function getAiResponse(prompt) {
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
     
-    // Updated to include analyzeContext
     const { mode, text, context, interpretation, analyzeContext, sender, receiver, senderNeurotype, receiverNeurotype, senderGeneration, receiverGeneration } = req.body;
     let prompt;
+
+    let neurotypeInstructions = '';
+    if (senderNeurotype === 'Autism' || receiverNeurotype === 'Autism') {
+        neurotypeInstructions += ' When Autism is specified, consider traits like a preference for direct, literal language and potential difficulty interpreting subtext.';
+    }
+    if (senderNeurotype === 'ADHD' || receiverNeurotype === 'ADHD') {
+        neurotypeInstructions += ' When ADHD is specified, consider traits like non-linear communication, valuing passion, and potential challenges with executive function impacting response time or structure.';
+    }
+
     if (mode === 'draft') {
         prompt = `
             ROLE: Act as a communication coach.
-            TASK: Analyze the DRAFT based on SENDER and RECEIVER styles. BE CONCISE.
+            TASK: Analyze the DRAFT based on SENDER and RECEIVER styles. BE CONCISE. ${neurotypeInstructions}
             1. Explain potential misinterpretations in simple HTML.
             2. Rewrite the DRAFT for the receiver in simple HTML.
             OUTPUT: Respond with STRICT JSON: {"explanation":"<p>analysis...</p>","response":"<p>rewrite...</p>"}.
             ---
-            SENDER STYLE: ${sender}
-            RECEIVER STYLE: ${receiver}
+            SENDER: Style=${sender}, Neurotype=${senderNeurotype}, Gen=${senderGeneration}
+            RECEIVER: Style=${receiver}, Neurotype=${receiverNeurotype}, Gen=${receiverGeneration}
             INTENT: ${context}
             DRAFT: ${text}
         `;
     } else {
         prompt = `
             ROLE: Act as a communication coach.
-            TASK: Analyze the MESSAGE based on SENDER and RECEIVER styles. BE CONCISE.
+            TASK: Analyze the MESSAGE based on SENDER and RECEIVER styles. BE CONCISE. ${neurotypeInstructions}
             1. Explain the sender's likely intent in simple HTML.
             2. Suggest a strategic response in simple HTML.
             OUTPUT: Respond with STRICT JSON: {"explanation":"<p>analysis...</p>","response":"<p>rewrite...</p>"}.
             ---
-            SENDER STYLE: ${sender}
-            RECEIVER STYLE: ${receiver}
+            SENDER: Style=${sender}, Neurotype=${senderNeurotype}, Gen=${senderGeneration}
+            RECEIVER: Style=${receiver}, Neurotype=${receiverNeurotype}, Gen=${receiverGeneration}
             SITUATION: ${analyzeContext}
             MESSAGE: ${text}
             MY INTERPRETATION: ${interpretation}
