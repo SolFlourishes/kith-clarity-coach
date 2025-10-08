@@ -4,7 +4,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App.jsx';
 import HomePage from './pages/HomePage.jsx';
 import TranslatePage from './pages/TranslatePage.jsx';
-import CoachPage from './pages/CoachPage.jsx';
+import ChatPage from './pages/ChatPage.jsx'; // Corrected Import
 import AboutPage from './pages/AboutPage.jsx';
 import HowToUsePage from './pages/HowToUsePage.jsx';
 import RoadmapPage from './pages/RoadmapPage.jsx';
@@ -20,7 +20,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: 'translate/:mode', element: <TranslatePage /> },
-      { path: 'coach', element: <CoachPage /> },
+      { path: 'chat', element: <ChatPage /> }, // Corrected Route
       { path: 'about', element: <AboutPage /> },
       { path: 'how-to-use', element: <HowToUsePage /> },
       { path: 'roadmap', element: <RoadmapPage /> },
