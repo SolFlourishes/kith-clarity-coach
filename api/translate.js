@@ -8,7 +8,10 @@ async function getAiResponse(prompt) {
 
     try {
         const response = await axios.post(url, body, { headers });
-        return response.data.candidates[0].content.parts[0].text;
+        if (response.data && response.data.candidates && response.data.candidates.length > 0) {
+            return response.data.candidates[0].content.parts[0].text;
+        }
+        throw new Error('Invalid AI response structure');
     } catch (error) {
         console.error('Gemini API Error:', error.response ? error.response.data : error.message);
         throw new Error('Failed to get response from AI');
@@ -16,6 +19,14 @@ async function getAiResponse(prompt) {
 }
 
 export default async function handler(req, res) {
+    // DIAGNOSTIC LOGS
+    console.log('--- /api/translate function invoked ---');
+    if (!process.env.VITE_GEMINI_API_KEY) {
+        console.error('SERVER ERROR: VITE_GEMINI_API_KEY is not set.');
+        return res.status(500).json({ message: 'Server configuration error: Missing Gemini API Key.' });
+    }
+    console.log('Gemini API Key is present.');
+    
     if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
     const { mode, text, context, interpretation, sender, receiver, senderNeurotype, receiverNeurotype, senderGeneration, receiverGeneration } = req.body;
     let prompt;
@@ -26,9 +37,15 @@ export default async function handler(req, res) {
     }
     try {
         const aiResponseText = await getAiResponse(prompt);
-        const jsonResponse = JSON.parse(aiResponseText);
-        res.status(200).json(jsonResponse);
+        try {
+            const jsonResponse = JSON.parse(aiResponseText);
+            res.status(200).json(jsonResponse);
+        } catch (parseError) {
+             console.error("Failed to parse AI response:", aiResponseText);
+             res.status(500).json({ message: 'Error parsing AI response.' });
+        }
     } catch (error) {
         res.status(500).json({ message: 'Error processing your request.' });
     }
 }
+
