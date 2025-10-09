@@ -79,7 +79,7 @@ function TranslatePage() {
         document.body.removeChild(textArea);
     };
 
-    // MODIFIED handleSubmit for robust streaming JSON parsing
+    // MODIFIED handleSubmit for RETHINKING STREAMING: Read raw text on the client
     const handleSubmit = async (event) => {
         event.preventDefault();
         setLoading(true);
@@ -100,7 +100,6 @@ function TranslatePage() {
                     setLoading(false);
                     return;
                 }
-                // Use a standard post for the classification (this should be fast)
                 const classificationResponse = await axios.post('/api/classify-style', { text: textForClassification });
                 finalSenderStyle = classificationResponse.data.style;
             }
@@ -124,7 +123,6 @@ function TranslatePage() {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                // This will throw the error (e.g., 400 Bad Request, if any)
                 throw new Error(errorText || `HTTP error! Status: ${response.status}`);
             }
 
@@ -133,45 +131,45 @@ function TranslatePage() {
             let accumulatedText = '';
             let finalAiResponse = null;
 
-            // 4. Read the stream chunk-by-chunk and accumulate the JSON body
+            // 4. Read the raw text stream on the client side
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
 
                 const chunk = decoder.decode(value, { stream: true });
                 accumulatedText += chunk;
-
-                // Temporarily update the UI with partial data for good UX
+                
+                // Temporarily update the UI with partial data for good UX (optional but helpful)
                 setAiResponse(prev => ({ 
-                    // This prevents the error message from being immediately overwritten by a blank object
                     explanation: prev?.explanation && prev.explanation.includes('Generating') ? prev.explanation : '*Generating...*',
-                    response: accumulatedText.replace(/<[^>]*>/g, '') // Clean for display
+                    response: accumulatedText.replace(/<[^>]*>/g, '').replace(/```json\s*|```\s*/g, '').trim() // Aggressively clean for display
                 }));
             }
 
             // 5. FINAL ROBUST PARSING OF THE ACCUMULATED JSON TEXT (AGGRESSIVE SCRUBBING)
             let fullJsonText = accumulatedText;
             
-            // Step 5a: Aggressively strip non-printable ASCII control characters (BOMs, etc.)
+            // Step 5a: Aggressively strip non-printable ASCII control characters
             fullJsonText = fullJsonText.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
 
             // Step 5b: ***THE DEFINITIVE FIX: Extract only the core JSON object***
-            // Use regex to find the FIRST '{' and the LAST '}' that defines the primary object. 
-            // This discards ALL surrounding metadata, control characters, and junk.
+            // This regex finds the string starting with the first '{' and ending with the last '}'
+            // and strips out all surrounding junk, metadata, and markdown fences.
             const jsonMatch = fullJsonText.match(/(\{[\s\S]*\})$/s);
 
             if (jsonMatch && jsonMatch[1]) {
                 fullJsonText = jsonMatch[1];
             } else {
-                // Fallback: If regex fails, the stream was fundamentally broken or empty.
                 console.error("Critical Parsing Failure: Regex could not isolate the JSON object.");
-                console.error("Full Content Received:", fullJsonText);
-                // Throwing here triggers the catch block, displaying the generic error message
+                console.error("Full Content Received (for debug):", fullJsonText);
                 throw new Error("AI generation completed, but the output was unrecognizable.");
             }
 
+            // Step 5c: Final cleanup of the extracted JSON (removing residual markdown fences)
+            fullJsonText = fullJsonText.replace(/```json\s*|```\s*/g, '').trim();
+
             try {
-                // Try to parse the now-isolated JSON string
+                // Try to parse the now-isolated and cleaned JSON string
                 finalAiResponse = JSON.parse(fullJsonText);
                 
                 // Set the final state
@@ -186,10 +184,8 @@ function TranslatePage() {
             // Handle server errors (e.g., 400)
             let errorMessage = 'An error occurred. Please try again.';
             try {
-                // Try to parse error details if they came as JSON text
                 const errorJson = JSON.parse(err.message);
-                // Use the message field from the API error payload for better user feedback
-                errorMessage = errorJson.error?.message || err.message; 
+                errorMessage = errorJson.error?.message || err.message;
             } catch {
                 errorMessage = err.message || errorMessage;
             }
