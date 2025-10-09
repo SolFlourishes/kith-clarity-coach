@@ -155,18 +155,23 @@ function TranslatePage() {
             // Step 5a: Aggressively strip non-printable ASCII control characters (BOMs, etc.)
             fullJsonText = fullJsonText.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
 
-            // Step 5b: Remove the final trailing comma or whitespace that often breaks JSON.parse
-            if (fullJsonText.endsWith(',')) {
-                fullJsonText = fullJsonText.slice(0, -1);
+            // Step 5b: ***THE DEFINITIVE FIX: Extract only the core JSON object***
+            // Use regex to find the FIRST '{' and the LAST '}' that defines the primary object. 
+            // This discards ALL surrounding metadata, control characters, and junk.
+            const jsonMatch = fullJsonText.match(/(\{[\s\S]*\})$/s);
+
+            if (jsonMatch && jsonMatch[1]) {
+                fullJsonText = jsonMatch[1];
+            } else {
+                // Fallback: If regex fails, the stream was fundamentally broken or empty.
+                console.error("Critical Parsing Failure: Regex could not isolate the JSON object.");
+                console.error("Full Content Received:", fullJsonText);
+                // Throwing here triggers the catch block, displaying the generic error message
+                throw new Error("AI generation completed, but the output was unrecognizable.");
             }
 
-            // Step 5c. Robustly strip surrounding curly braces and re-wrap for guaranteed parsing
-            fullJsonText = fullJsonText.replace(/^\{|\}$/g, '').trim(); 
-            
-            // Re-wrap the entire payload to guarantee valid JSON structure
-            fullJsonText = `{${fullJsonText}}`;
-
             try {
+                // Try to parse the now-isolated JSON string
                 finalAiResponse = JSON.parse(fullJsonText);
                 
                 // Set the final state
@@ -174,7 +179,6 @@ function TranslatePage() {
 
             } catch (e) {
                 console.error("Failed to parse final JSON response:", e, fullJsonText);
-                // If parsing fails, display an error to the user
                 setError("AI generation completed, but the output was malformed. Please try again.");
             }
 
@@ -184,7 +188,8 @@ function TranslatePage() {
             try {
                 // Try to parse error details if they came as JSON text
                 const errorJson = JSON.parse(err.message);
-                errorMessage = errorJson.error?.message || err.message; // Use the message field from the API error payload
+                // Use the message field from the API error payload for better user feedback
+                errorMessage = errorJson.error?.message || err.message; 
             } catch {
                 errorMessage = err.message || errorMessage;
             }
