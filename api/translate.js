@@ -85,8 +85,8 @@ export default async function handler(req, res) {
 
   try {
     const geminiResponse = await fetch(
-      // CRITICAL FIX: Changed model to gemini-pro-latest and ensured streaming endpoint path is correct
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContentStream?key=${GEMINI_API_KEY}`,
+      // *** THE CRITICAL CORRECTION IS HERE ***
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest/generateContentStream?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: {
