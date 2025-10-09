@@ -55,11 +55,13 @@ function TranslatePage() {
         return () => clearInterval(interval);
     }, [loading]);
 
-    // Populate editedResponse when a new AI response is received
+    // FIX: Apply optional chaining and string coercion to prevent 'replace' crash (TypeError)
+    // This hook populates the editable textarea.
     useEffect(() => {
-        if (aiResponse && aiResponse.response) {
-            // Remove HTML tags for the editable text area (clean the input for text-area)
-            const cleanResponse = aiResponse.response.replace(/<[^>]*>/g, '');
+        if (aiResponse?.response) { // Use optional chaining to check for aiResponse.response existence
+            // Coerce to string to guarantee the .replace method is available
+            const responseText = String(aiResponse.response); 
+            const cleanResponse = responseText.replace(/<[^>]*>/g, '');
             setEditedResponse(cleanResponse);
             setGoldenEditSaved(false); // Reset saved status for new translation
         }
@@ -79,7 +81,7 @@ function TranslatePage() {
         document.body.removeChild(textArea);
     };
 
-    // MODIFIED handleSubmit for RETHINKING STREAMING: Read raw text on the client
+    // MODIFIED handleSubmit for robust streaming JSON parsing
     const handleSubmit = async (event) => {
         event.preventDefault();
         setLoading(true);
@@ -142,7 +144,8 @@ function TranslatePage() {
                 // Temporarily update the UI with partial data for good UX (optional but helpful)
                 setAiResponse(prev => ({ 
                     explanation: prev?.explanation && prev.explanation.includes('Generating') ? prev.explanation : '*Generating...*',
-                    response: accumulatedText.replace(/<[^>]*>/g, '').replace(/```json\s*|```\s*/g, '').trim() // Aggressively clean for display
+                    // Aggressively clean the preview text (only for display)
+                    response: accumulatedText.replace(/<[^>]*>/g, '').replace(/```json\s*|```\s*/g, '').trim() 
                 }));
             }
 
@@ -153,8 +156,6 @@ function TranslatePage() {
             fullJsonText = fullJsonText.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
 
             // Step 5b: ***THE DEFINITIVE FIX: Extract only the core JSON object***
-            // This regex finds the string starting with the first '{' and ending with the last '}'
-            // and strips out all surrounding junk, metadata, and markdown fences.
             const jsonMatch = fullJsonText.match(/(\{[\s\S]*\})$/s);
 
             if (jsonMatch && jsonMatch[1]) {
