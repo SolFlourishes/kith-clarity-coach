@@ -143,20 +143,25 @@ function TranslatePage() {
 
                 // Temporarily update the UI with partial data for good UX
                 setAiResponse(prev => ({ 
+                    // This prevents the error message from being immediately overwritten by a blank object
                     explanation: prev?.explanation && prev.explanation.includes('Generating') ? prev.explanation : '*Generating...*',
                     response: accumulatedText.replace(/<[^>]*>/g, '') // Clean for display
                 }));
             }
 
-            // 5. FINAL ROBUST PARSING OF THE ACCUMULATED JSON TEXT (FIXED FOR FINAL EDGE CASES)
+            // 5. FINAL ROBUST PARSING OF THE ACCUMULATED JSON TEXT (AGGRESSIVE SCRUBBING)
             let fullJsonText = accumulatedText;
             
-            // **CRITICAL CLEANUP STEP:** Remove all surrounding whitespace/control characters
-            fullJsonText = fullJsonText.trim();
+            // Step 5a: Aggressively strip non-printable ASCII control characters (BOMs, etc.)
+            fullJsonText = fullJsonText.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
 
-            // Use regex to strip all surrounding, possibly duplicated, curly braces and then trim again.
-            // The 'g' flag ensures we only strip one layer on the ends, even if the user added extra brackets.
-            fullJsonText = fullJsonText.replace(/^[^{]*{|}[^}]*$/g, '').trim(); 
+            // Step 5b: Remove the final trailing comma or whitespace that often breaks JSON.parse
+            if (fullJsonText.endsWith(',')) {
+                fullJsonText = fullJsonText.slice(0, -1);
+            }
+
+            // Step 5c. Robustly strip surrounding curly braces and re-wrap for guaranteed parsing
+            fullJsonText = fullJsonText.replace(/^\{|\}$/g, '').trim(); 
             
             // Re-wrap the entire payload to guarantee valid JSON structure
             fullJsonText = `{${fullJsonText}}`;
@@ -169,6 +174,7 @@ function TranslatePage() {
 
             } catch (e) {
                 console.error("Failed to parse final JSON response:", e, fullJsonText);
+                // If parsing fails, display an error to the user
                 setError("AI generation completed, but the output was malformed. Please try again.");
             }
 
