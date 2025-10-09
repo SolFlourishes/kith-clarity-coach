@@ -56,10 +56,8 @@ function TranslatePage() {
     }, [loading]);
 
     // FIX: Apply optional chaining and string coercion to prevent 'replace' crash (TypeError)
-    // This hook populates the editable textarea.
     useEffect(() => {
-        if (aiResponse?.response) { // Use optional chaining to check for aiResponse.response existence
-            // Coerce to string to guarantee the .replace method is available
+        if (aiResponse?.response) { 
             const responseText = String(aiResponse.response); 
             const cleanResponse = responseText.replace(/<[^>]*>/g, '');
             setEditedResponse(cleanResponse);
@@ -144,16 +142,15 @@ function TranslatePage() {
                 // Temporarily update the UI with partial data for good UX (optional but helpful)
                 setAiResponse(prev => ({ 
                     explanation: prev?.explanation && prev.explanation.includes('Generating') ? prev.explanation : '*Generating...*',
-                    // Aggressively clean the preview text (only for display)
-                    response: accumulatedText.replace(/<[^>]*>/g, '').replace(/```json\s*|```\s*/g, '').trim() 
+                    response: accumulatedText.replace(/<[^>]*>/g, '').replace(/```json\s*|```\s*/g, '').trim() // Aggressively clean for display
                 }));
             }
 
             // 5. FINAL ROBUST PARSING OF THE ACCUMULATED JSON TEXT (AGGRESSIVE SCRUBBING)
             let fullJsonText = accumulatedText;
             
-            // Step 5a: Aggressively strip non-printable ASCII control characters
-            fullJsonText = fullJsonText.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
+            // Step 5a: Aggressively strip non-printable ASCII control characters (BOMs, etc.)
+            fullJsonText = fullJsonText.replace(/[\u0000-\u001F\u007F-\u009F\uFEFF]/g, '').trim();
 
             // Step 5b: ***THE DEFINITIVE FIX: Extract only the core JSON object***
             const jsonMatch = fullJsonText.match(/(\{[\s\S]*\})$/s);
@@ -166,7 +163,7 @@ function TranslatePage() {
                 throw new Error("AI generation completed, but the output was unrecognizable.");
             }
 
-            // Step 5c: Final cleanup of the extracted JSON (removing residual markdown fences)
+            // Step 5c: Final cleanup of residual markdown fences and trim
             fullJsonText = fullJsonText.replace(/```json\s*|```\s*/g, '').trim();
 
             try {
@@ -376,4 +373,4 @@ function TranslatePage() {
         </div>
     );
 }
-export default TranslatePage;
+export default TranslatePage;g
