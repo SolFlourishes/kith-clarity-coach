@@ -139,10 +139,15 @@ function TranslatePage() {
                 const chunk = decoder.decode(value, { stream: true });
                 accumulatedText += chunk;
                 
+                // CRITICAL FIX: Ensure 'accumulatedText' is coerced to String for safety
+                // This resolves the TypeError crash in the temporary UI update
+                const currentResponseText = String(accumulatedText);
+
                 // Temporarily update the UI with partial data for good UX (optional but helpful)
                 setAiResponse(prev => ({ 
                     explanation: prev?.explanation && prev.explanation.includes('Generating') ? prev.explanation : '*Generating...*',
-                    response: accumulatedText.replace(/<[^>]*>/g, '').replace(/```json\s*|```\s*/g, '').trim() // Aggressively clean for display
+                    // Aggressively clean the preview text (only for display)
+                    response: currentResponseText.replace(/<[^>]*>/g, '').replace(/```json\s*|```\s*/g, '').trim() 
                 }));
             }
 
