@@ -1,4 +1,4 @@
-// api/translate.js (The true serverless function)
+// api/translate.js
 
 // IMPORTANT: Use VITE_GEMINI_API_KEY to match Vercel environment variables
 const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
@@ -117,41 +117,19 @@ export default async function handler(req, res) {
     res.writeHead(200);
 
     const reader = geminiResponse.body.getReader();
-    const decoder = new TextDecoder();
-
+    
     // Loop to read chunks and write them directly to the client
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
-      const chunkText = decoder.decode(value);
-      
-      // Process chunks from the ?alt=sse streaming format
-      const parts = chunkText
-        .split('\n')
-        .map(line => line.replace(/^data:\s*/, '').trim()) // Remove SSE prefix
-        .filter(p => p.length > 0);
-
-      for (const part of parts) {
-        try {
-          const jsonPart = JSON.parse(part);
-          // Extract the text content from the nested structure
-          let content = jsonPart.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          
-          // Strip rogue markdown fences (```json\n, \n```) and \\n
-          content = content.replace(/```json\s*|```\s*|\\n/g, '').trim();
-
-
-          if (content) {
-            // Write the cleaned content directly to the response stream
-            res.write(content);
-          }
-        } catch (e) {
-          console.error('Error parsing JSON chunk from API (Server-Side):', e.message, part);
-        }
-      }
+      // CRITICAL FIX: Write the raw buffer 'value' directly to the response stream.
+      // Do NOT decode or JSON parse here, as this is causing the server-side error.
+      res.write(value); 
     }
 
+    // Log the end
+    console.log(`[DEBUG] Streaming complete.`);
     res.end();
 
   } catch (error) {
