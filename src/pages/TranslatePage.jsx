@@ -16,7 +16,7 @@ const loadingTips = [
 ];
 
 // Define the current application version for logging
-const APP_VERSION = '2.1.1'; // Branding updated to Clarity Coach
+const APP_VERSION = '2.1.1'; 
 
 function TranslatePage() {
     const { mode } = useParams();
@@ -79,7 +79,7 @@ function TranslatePage() {
         document.body.removeChild(textArea);
     };
 
-    // MODIFIED handleSubmit for streaming
+    // MODIFIED handleSubmit for robust streaming JSON parsing
     const handleSubmit = async (event) => {
         event.preventDefault();
         setLoading(true);
@@ -101,11 +101,9 @@ function TranslatePage() {
                     return;
                 }
                 // Use a standard post for the classification (this should be fast)
-                classificationPromise = axios.post('/api/classify-style', { text: textForClassification });
+                const classificationResponse = await axios.post('/api/classify-style', { text: textForClassification });
+                finalSenderStyle = classificationResponse.data.style;
             }
-
-            const classificationResponse = await classificationPromise;
-            finalSenderStyle = classificationResponse.data.style;
 
             // 2. Prepare the request body for translation
             const requestBody = { 
@@ -126,6 +124,7 @@ function TranslatePage() {
 
             if (!response.ok) {
                 const errorText = await response.text();
+                // This will throw the error (e.g., 400 Bad Request, if any)
                 throw new Error(errorText || `HTTP error! Status: ${response.status}`);
             }
 
@@ -142,52 +141,50 @@ function TranslatePage() {
                 const chunk = decoder.decode(value, { stream: true });
                 accumulatedText += chunk;
 
-                // Simple temporary display of partial response to show progress (optional but good UX)
-                // Note: This relies on the AI outputting the JSON structure sequentially
-                setAiResponse({ 
-                    explanation: `*Generating...*`, 
-                    // Temporarily display the accumulated text for UX
-                    response: accumulatedText.replace(/<[^>]*>/g, '') 
-                });
+                // Temporarily update the UI with partial data for good UX
+                setAiResponse(prev => ({ 
+                    explanation: prev?.explanation.includes('Generating') ? prev.explanation : '*Generating...*',
+                    response: accumulatedText.replace(/<[^>]*>/g, '') // Clean for display
+                }));
             }
 
-            // 5. Final parsing of the accumulated JSON text
+            // 5. FINAL ROBUST PARSING OF THE ACCUMULATED JSON TEXT
+            let fullJsonText = accumulatedText.trim();
+            
+            // 5a. Robustly ensure single outer brackets
+            if (fullJsonText.endsWith('}')) {
+                fullJsonText = fullJsonText.substring(0, fullJsonText.length - 1);
+            }
+            if (fullJsonText.startsWith('{')) {
+                fullJsonText = fullJsonText.substring(1);
+            }
+            // Re-wrap the entire payload to guarantee valid JSON structure
+            fullJsonText = `{${fullJsonText}}`;
+
             try {
-                // Manually add the outer braces since the AI was told to output ONLY the content
-                // We also strip any leading/trailing whitespace or newlines
-                let fullJsonText = accumulatedText.trim();
-
-                // If the stream started successfully, it should already be the inner content
-                // Check if it's missing the final brace, and try to add it.
-                if (!fullJsonText.startsWith('{')) {
-                    fullJsonText = `{${fullJsonText}`;
-                }
-                if (!fullJsonText.endsWith('}')) {
-                    fullJsonText = `${fullJsonText}}`;
-                }
-
-                // Attempt to parse
                 finalAiResponse = JSON.parse(fullJsonText);
                 
                 // Set the final state
                 setAiResponse(finalAiResponse);
 
             } catch (e) {
-                console.error("Failed to parse JSON response:", e, accumulatedText);
+                console.error("Failed to parse final JSON response:", e, fullJsonText);
                 setError("AI generation completed, but the output was malformed. Please try again.");
             }
 
         } catch (err) {
-            // Check for a specific error format if possible
+            // Handle server errors (e.g., 400)
             let errorMessage = 'An error occurred. Please try again.';
             try {
+                // Try to parse error details if they came as JSON text
                 const errorJson = JSON.parse(err.message);
-                if (errorJson.message) errorMessage = errorJson.message;
+                errorMessage = errorJson.error?.message || err.message; // Use the message field from the API error payload
             } catch {
-                errorMessage = err.message || 'An error occurred. Please try again.';
+                errorMessage = err.message || errorMessage;
             }
 
             setError(errorMessage);
+            setAiResponse(null); // Ensure boxes are hidden on error
         } finally {
             setLoading(false);
         }
@@ -341,14 +338,12 @@ function TranslatePage() {
                 <div className="response-container" aria-live="polite">
                     <div className="io-box">
                         <h3 className="box-title">{isDraftMode ? "How They Might Hear It (Explanation)" : "What They Likely Meant (Explanation)"}</h3>
-                        {/* The Explanation is still read-only HTML */}
                         <div className="ai-output" dangerouslySetInnerHTML={{ __html: aiResponse.explanation }} />
                         <Feedback type="explanation" onSubmit={handleFeedbackSubmit} isSuccess={!!aiResponse.feedback?.explanationRating} />
                     </div>
                     <div className="io-box response-editable">
                         <div className="box-header">
                             <h3 className="box-title">{isDraftMode ? "The Translation (Suggested Draft)" : "The Translation (Suggested Response)"}</h3>
-                            {/* The 'Save Golden Edit' Button is added here */}
                             <button 
                                 type="button" 
                                 className={`save-golden-edit-button ${goldenEditSaved ? 'saved' : ''}`}
@@ -359,16 +354,14 @@ function TranslatePage() {
                                 {goldenEditSaved ? 'Saved! Thank you.' : 'Save Golden Edit'}
                             </button>
                         </div>
-                        {/* The Response is now an editable textarea */}
                         <textarea 
                             className="ai-output editable-textarea"
                             value={editedResponse}
                             onChange={(e) => setEditedResponse(e.target.value)}
-                            rows={8} // Adjust rows as needed
+                            rows={8}
                         />
                         <Feedback type="response" onSubmit={handleFeedbackSubmit} isSuccess={!!aiResponse.feedback?.responseRating} />
                     </div>
-                    {/* Display global feedback success message */}
                     {feedbackSuccess && <div className="success-message-global" role="alert">{feedbackSuccess}</div>}
                 </div>
             )}
