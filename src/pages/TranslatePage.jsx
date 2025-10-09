@@ -143,21 +143,21 @@ function TranslatePage() {
 
                 // Temporarily update the UI with partial data for good UX
                 setAiResponse(prev => ({ 
-                    explanation: prev?.explanation.includes('Generating') ? prev.explanation : '*Generating...*',
+                    explanation: prev?.explanation && prev.explanation.includes('Generating') ? prev.explanation : '*Generating...*',
                     response: accumulatedText.replace(/<[^>]*>/g, '') // Clean for display
                 }));
             }
 
-            // 5. FINAL ROBUST PARSING OF THE ACCUMULATED JSON TEXT
-            let fullJsonText = accumulatedText.trim();
+            // 5. FINAL ROBUST PARSING OF THE ACCUMULATED JSON TEXT (FIXED FOR FINAL EDGE CASES)
+            let fullJsonText = accumulatedText;
             
-            // 5a. Robustly ensure single outer brackets
-            if (fullJsonText.endsWith('}')) {
-                fullJsonText = fullJsonText.substring(0, fullJsonText.length - 1);
-            }
-            if (fullJsonText.startsWith('{')) {
-                fullJsonText = fullJsonText.substring(1);
-            }
+            // **CRITICAL CLEANUP STEP:** Remove all surrounding whitespace/control characters
+            fullJsonText = fullJsonText.trim();
+
+            // Use regex to strip all surrounding, possibly duplicated, curly braces and then trim again.
+            // The 'g' flag ensures we only strip one layer on the ends, even if the user added extra brackets.
+            fullJsonText = fullJsonText.replace(/^[^{]*{|}[^}]*$/g, '').trim(); 
+            
             // Re-wrap the entire payload to guarantee valid JSON structure
             fullJsonText = `{${fullJsonText}}`;
 
