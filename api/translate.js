@@ -77,7 +77,7 @@ export default async function handler(req, res) {
   const payload = {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     
-    // FINAL FIX: systemInstruction is top-level Content object
+    // FINAL STRUCTURAL FIX: systemInstruction is top-level Content object
     systemInstruction: { 
         parts: [{ text: SYSTEM_INSTRUCTION }] 
     },
@@ -133,7 +133,7 @@ export default async function handler(req, res) {
       if (done) break;
 
       const chunkText = decoder.decode(value);
-      stream_buffer += chunkText; // Capture stream output in the server log
+      stream_buffer += chunkText; 
       
       // Process chunks from the ?alt=sse streaming format
       const parts = chunkText
@@ -145,14 +145,20 @@ export default async function handler(req, res) {
         try {
           const jsonPart = JSON.parse(part);
           // Extract the text content from the nested structure
-          const content = jsonPart.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          let content = jsonPart.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          
+          // *** CRITICAL SERVER-SIDE CLEANUP ***
+          // Strip rogue markdown fences (```json\n, \n```) and \\n that breaks client parsing
+          content = content.replace(/```json\s*|```\s*|\\n/g, '').trim();
+
+
           if (content) {
-            // Write the text content directly to the response stream
+            // Write the cleaned content directly to the response stream
             res.write(content);
           }
         } catch (e) {
           // Log parsing error but keep streaming to allow the client to piece together the full response
-          console.error('Error parsing JSON chunk from API:', e.message, part);
+          console.error('Error parsing JSON chunk from API (Server-Side):', e.message, part);
         }
       }
     }
