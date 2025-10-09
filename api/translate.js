@@ -85,8 +85,9 @@ export default async function handler(req, res) {
 
   try {
     const geminiResponse = await fetch(
-      // *** THE CRITICAL CORRECTION IS HERE: Restored the colon (:) separator ***
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContentStream?key=${GEMINI_API_KEY}`,
+      // *** THE FINAL CRITICAL CORRECTION IS HERE ***
+      // Use the known-working method path and add the streaming query parameter
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?alt=sse&key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: {
@@ -106,6 +107,8 @@ export default async function handler(req, res) {
     }
 
     // 4. Initiate Streaming Response
+    // When using ?alt=sse, the response content type should be text/event-stream
+    // but since we are manually decoding the JSON chunks, we will stick to application/json
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Transfer-Encoding', 'chunked');
     res.writeHead(200);
@@ -119,7 +122,12 @@ export default async function handler(req, res) {
       if (done) break;
 
       const chunkText = decoder.decode(value);
-      const parts = chunkText.trim().split('\n').filter(p => p.length > 0);
+      // The chunks from ?alt=sse may start with 'data: ' and end with '\n\n'.
+      // We need to clean that up before parsing.
+      const parts = chunkText
+        .split('\n')
+        .map(line => line.replace(/^data:\s*/, '').trim()) // Remove SSE prefix
+        .filter(p => p.length > 0);
 
       for (const part of parts) {
         try {
