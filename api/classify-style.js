@@ -17,7 +17,7 @@ async function getAiClassification(text) {
     // CRITICAL FIX: Use VITE_GEMINI_API_KEY to match Vercel environment
     const apiKey = process.env.VITE_GEMINI_API_KEY;
     
-    // Note: Using the non-streaming endpoint as the response is small and quick
+    // CRITICAL FIX: Changed model to gemini-pro-latest and ensured non-streaming endpoint path is correct
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?key=${apiKey}`;
     
     const prompt = `Analyze the text and classify its style as "direct" or "indirect". Text: "${text}". Return only JSON: {"style": "your_classification"}`;

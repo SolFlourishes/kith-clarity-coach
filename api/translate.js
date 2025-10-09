@@ -78,7 +78,6 @@ export default async function handler(req, res) {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     config: {
       systemInstruction: SYSTEM_INSTRUCTION,
-      // Use gemini-2.5-flash for speed and lower cost
       temperature: 0.4, 
       maxOutputTokens: 1024 
     }
@@ -86,7 +85,8 @@ export default async function handler(req, res) {
 
   try {
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash/generateContentStream?key=${GEMINI_API_KEY}`,
+      // CRITICAL FIX: Changed model to gemini-pro-latest and ensured streaming endpoint path is correct
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContentStream?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: {
@@ -119,7 +119,6 @@ export default async function handler(req, res) {
       if (done) break;
 
       const chunkText = decoder.decode(value);
-      // The API returns chunks as JSON objects separated by newlines
       const parts = chunkText.trim().split('\n').filter(p => p.length > 0);
 
       for (const part of parts) {
