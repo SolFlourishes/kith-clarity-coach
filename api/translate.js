@@ -85,8 +85,9 @@ export default async function handler(req, res) {
 
   try {
     const geminiResponse = await fetch(
-      // *** CRITICAL FIX: Switch to gemini-2.5-flash and dedicated streaming path ***
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash/generateContentStream?key=${GEMINI_API_KEY}`,
+      // *** FINAL STABLE STREAMING PATH FIX: Using :generateContent with alt=sse ***
+      // This relies on the same base path that classify-style.js proves is reachable.
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?alt=sse&key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: {
@@ -119,7 +120,11 @@ export default async function handler(req, res) {
       if (done) break;
 
       const chunkText = decoder.decode(value);
-      const parts = chunkText.trim().split('\n').filter(p => p.length > 0);
+      // Process chunks from the ?alt=sse streaming format
+      const parts = chunkText
+        .split('\n')
+        .map(line => line.replace(/^data:\s*/, '').trim()) // Remove SSE prefix
+        .filter(p => p.length > 0);
 
       for (const part of parts) {
         try {
