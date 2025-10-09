@@ -77,8 +77,10 @@ export default async function handler(req, res) {
   const payload = {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     
-    // *** FINAL STRUCTURAL FIX: systemInstruction is a top-level peer to contents and generationConfig ***
-    systemInstruction: SYSTEM_INSTRUCTION, 
+    // *** ABSOLUTE FINAL FIX: System Instruction must be a Content object, not a string ***
+    systemInstruction: { 
+        parts: [{ text: SYSTEM_INSTRUCTION }] 
+    },
 
     generationConfig: { 
       temperature: 0.4, 
@@ -88,7 +90,7 @@ export default async function handler(req, res) {
 
   try {
     const geminiResponse = await fetch(
-      // Correct Path: using :generateContent with alt=sse (stable streaming method for this path structure)
+      // Correct Path: using :generateContent with alt=sse
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?alt=sse&key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
