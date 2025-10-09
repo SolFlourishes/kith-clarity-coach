@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import './Footer.css';
-import pkg from '../../package.json';
 
 function Footer() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const currentYear = new Date().getFullYear();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +23,10 @@ function Footer() {
   return (
     <footer className="app-footer">
       <div className="footer-content">
-        <div className="footer-version"><span>Kith Clarity Coach | Beta Version {pkg.version}</span></div>
+        <div className="footer-links">
+          <span>© {currentYear} Hearthside Works, LLC. All Rights Reserved.</span>
+          <Link to="/commitments">Our Commitments (Privacy & Accessibility)</Link>
+        </div>
         <div className="footer-subscribe">
           <p>Get notified about updates:</p>
           <form onSubmit={handleSubmit}>

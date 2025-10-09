@@ -7,7 +7,7 @@ function Header() {
   return (
     <header className="app-header">
       <Link to="/" className="logo-link">
-        <div className="logo">KITH</div>
+        <div className="logo">Hearthside Works</div>
         <div className="product-name">Clarity Coach</div>
       </Link>
       <nav className="main-nav">
@@ -23,6 +23,7 @@ function Header() {
               <NavLink to="/changelog" onClick={() => setIsMenuOpen(false)}>Change Log</NavLink>
               <NavLink to="/enhancements" onClick={() => setIsMenuOpen(false)}>Enhancements</NavLink>
               <NavLink to="/credits" onClick={() => setIsMenuOpen(false)}>Credits</NavLink>
+              <NavLink to="/commitments" onClick={() => setIsMenuOpen(false)}>Our Commitments</NavLink>
             </div>
           )}
         </div>

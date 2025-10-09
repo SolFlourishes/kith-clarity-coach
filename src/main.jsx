@@ -11,6 +11,7 @@ import RoadmapPage from './pages/RoadmapPage.jsx';
 import ChangeLogPage from './pages/ChangeLogPage.jsx';
 import EnhancementsPage from './pages/EnhancementsPage.jsx';
 import CreditsPage from './pages/CreditsPage.jsx';
+import CommitmentsPage from './pages/CommitmentsPage.jsx'; // Import the new page
 import './index.css';
 
 const router = createBrowserRouter([
@@ -27,6 +28,7 @@ const router = createBrowserRouter([
       { path: 'changelog', element: <ChangeLogPage /> },
       { path: 'enhancements', element: <EnhancementsPage /> },
       { path: 'credits', element: <CreditsPage /> },
+      { path: 'commitments', element: <CommitmentsPage /> }, // Add the new route
     ],
   },
 ]);

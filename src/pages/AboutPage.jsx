@@ -6,13 +6,13 @@ function AboutPage() {
     <div className="content-page">
       <h1>Hear Me, See Me, Know Me.</h1>
       <p className="mission">
-        <strong>Our Vision:</strong> To create a world where everyone can find their "kith"—their community of understanding—and feel supported, valued, and known.
+        <strong>Our Vision:</strong> To create a world where everyone can find their community of understanding—and feel supported, valued, and known.
       </p>
 
       <div className="content-block">
-        <h3>What is "Kith"?</h3>
+        <h3>What is "Hearthside Works"?</h3>
         <p>
-          "Kith" is an old word for one's friends, acquaintances, and neighbors. It represents the community you belong to. At Kith, LLC, we build tools that foster mutual understanding, creating a world where everyone can flourish and belong.
+          A hearth is the heart of a home—a source of warmth, a place for gathering, and the center of connection. At Hearthside Works, LLC, we build tools that create that same sense of warmth, connection, and understanding in our digital and professional lives.
         </p>
       </div>
       

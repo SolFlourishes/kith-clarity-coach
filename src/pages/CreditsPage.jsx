@@ -8,7 +8,7 @@ function CreditsPage() {
       
       <div className="content-block">
         <h2>Founder & Visionary</h2>
-        <p>The Clarity Coach was conceived, designed, and guided by the singular vision of <strong>Sol Roberts-Lieb, Ed.D.</strong> based on his life-long experience of being misunderstood. This application, including its core workflows for drafting and analyzing messages, the "intent-first" user interface, the concept of a conversational coach for neurotype communication, and the intellectual framework for translating between neurotypes, is the direct result of their insightful identification of a critical need and their dedication to building a tool that fosters empathy and understanding.</p>
+        <p>The Clarity Coach was conceived, designed, and guided by the singular vision of <strong>Sol Roberts-Lieb, Ed.D.</strong> This application, including its core workflows and intellectual framework, is the direct result of their dedication to building a tool that fosters empathy and understanding. </p>
       </div>
       <div className="content-block">
         <h2>Development Process</h2>

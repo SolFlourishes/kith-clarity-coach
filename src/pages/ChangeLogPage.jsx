@@ -5,6 +5,13 @@ function ChangeLogPage() {
   return (
     <div className="content-page">
       <h1>Change Log</h1>
+       <div className="log-entry">
+        <h2>Version 2.1.1 (Latest)</h2>
+        <ul>
+          <li><strong>Branding Update:</strong> Updated all branding to reflect the new company name, "Hearthside Works," and the product name, "Clarity Coach."</li>
+          <li>Added "Our Commitments" page for Privacy and Accessibility statements.</li>
+        </ul>
+      </div>
       <div className="log-entry">
         <h2>Version 2.1 (Beta)</h2>
         <ul>
