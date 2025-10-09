@@ -77,12 +77,12 @@ export default async function handler(req, res) {
   const payload = {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     
-    // **CRITICAL FIX 3: systemInstruction is top-level and must be a Content object**
+    // FINAL FIX: systemInstruction is top-level Content object
     systemInstruction: { 
         parts: [{ text: SYSTEM_INSTRUCTION }] 
     },
 
-    // **CRITICAL FIX 2: Correct field name is generationConfig**
+    // Correct field name is generationConfig
     generationConfig: { 
       temperature: 0.4, 
       maxOutputTokens: 1024 
@@ -90,8 +90,11 @@ export default async function handler(req, res) {
   };
 
   try {
+    // **DEBUG LOG 1: Log the start of the external API request**
+    console.log(`[DEBUG] Starting Gemini request for mode: ${mode}`);
+
     const geminiResponse = await fetch(
-      // **CRITICAL FIX 1: Correct path and alt=sse streaming parameter**
+      // Correct Path: using :generateContent with alt=sse
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?alt=sse&key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
@@ -101,6 +104,10 @@ export default async function handler(req, res) {
         body: JSON.stringify(payload),
       }
     );
+
+    // **DEBUG LOG 2: Log the status received from the API**
+    console.log(`[DEBUG] Gemini API status: ${geminiResponse.status}`);
+
 
     if (!geminiResponse.ok) {
         const errorBody = await geminiResponse.text();
@@ -118,6 +125,7 @@ export default async function handler(req, res) {
 
     const reader = geminiResponse.body.getReader();
     const decoder = new TextDecoder();
+    let stream_buffer = ''; // Buffer for server-side debugging
 
     // Loop to read chunks and write them directly to the client
     while (true) {
@@ -125,6 +133,8 @@ export default async function handler(req, res) {
       if (done) break;
 
       const chunkText = decoder.decode(value);
+      stream_buffer += chunkText; // Capture stream output in the server log
+      
       // Process chunks from the ?alt=sse streaming format
       const parts = chunkText
         .split('\n')
@@ -146,6 +156,11 @@ export default async function handler(req, res) {
         }
       }
     }
+    
+    // **DEBUG LOG 3: Log the total streamed content (or a sample of it)**
+    console.log(`[DEBUG] Total streamed content length: ${stream_buffer.length}`);
+    console.log(`[DEBUG] Stream end content sample: ${stream_buffer.substring(stream_buffer.length - 100, stream_buffer.length)}`);
+
 
     // 5. End the response stream
     res.end();
