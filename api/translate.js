@@ -76,7 +76,8 @@ export default async function handler(req, res) {
   // 3. Prepare the request payload for the streaming REST API
   const payload = {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    config: {
+    // *** FINAL CRITICAL FIX: generationConfig is the correct field name ***
+    generationConfig: { 
       systemInstruction: SYSTEM_INSTRUCTION,
       temperature: 0.4, 
       maxOutputTokens: 1024 
@@ -85,8 +86,7 @@ export default async function handler(req, res) {
 
   try {
     const geminiResponse = await fetch(
-      // *** FINAL STABLE STREAMING PATH FIX: Using :generateContent with alt=sse ***
-      // This relies on the same base path that classify-style.js proves is reachable.
+      // URL remains the same, using :generateContent with alt=sse
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?alt=sse&key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
