@@ -1,9 +1,8 @@
 // api/translate.js
 
-// Ensure GEMINI_API_KEY is available in the Vercel environment variables
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+// IMPORTANT: Use VITE_GEMINI_API_KEY to match Vercel environment variables
+const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
 
-// New System Instruction to enforce formatting, remove 'BE CONCISE', and set constraints
 const SYSTEM_INSTRUCTION = `
 You are the Clarity Coach, an expert in social-pragmatic communication, neurodiversity, and cross-cultural communication. Your goal is to translate messages between different communication styles (Direct, Indirect).
 
@@ -26,7 +25,6 @@ You are the Clarity Coach, an expert in social-pragmatic communication, neurodiv
 
 /**
  * Handles the POST request for translation by streaming the response from the Gemini API.
- * This replaces the previous synchronous axios logic to prevent Vercel timeouts.
  * @param {object} req - The request object.
  * @param {object} res - The response object.
  */
@@ -35,6 +33,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
+  // CRITICAL CHECK: Ensure the key is present
   if (!GEMINI_API_KEY) {
     return res.status(500).json({ message: 'GEMINI_API_KEY is not configured in the environment.' });
   }
@@ -81,7 +80,7 @@ export default async function handler(req, res) {
       systemInstruction: SYSTEM_INSTRUCTION,
       // Use gemini-2.5-flash for speed and lower cost
       temperature: 0.4, 
-      maxOutputTokens: 1024 // A generous max token limit for the rich response
+      maxOutputTokens: 1024 
     }
   };
 
@@ -107,7 +106,6 @@ export default async function handler(req, res) {
     }
 
     // 4. Initiate Streaming Response
-    // We stream the data directly to the client
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Transfer-Encoding', 'chunked');
     res.writeHead(200);
@@ -145,7 +143,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Critical Streaming Translation Error:', error);
-    // Use res.end() instead of res.json() when streaming has started, to avoid header conflicts
+    // Use res.end() instead of res.json() when streaming has started
     res.end(JSON.stringify({ message: 'A critical streaming error occurred.', details: error.message }));
   }
 }
