@@ -1,11 +1,26 @@
+// api/chat.js
+
 import axios from 'axios';
 
 async function getAiChatResponse(history) {
     const apiKey = process.env.VITE_GEMINI_API_KEY;
+    // NOTE: This URL is non-streaming and is confirmed to be working.
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?key=${apiKey}`;
-    const systemPrompt = `You are the Clarity Coach, an expert in neurodivergent-affirming communication. Your tone is empathetic, insightful, and supportive. Use HTML for formatting.`;
-    const contents = history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.content }] }));
-    const body = { contents, systemInstruction: { parts: [{ text: systemPrompt }] } };
+    
+    const SYSTEM_PROMPT_CONTENT = `You are the Clarity Coach, an expert in neurodivergent-affirming communication. Your tone is empathetic, insightful, and supportive. Use HTML for formatting.`;
+
+    const contents = history.map(msg => ({ 
+        role: msg.role === 'user' ? 'user' : 'model', 
+        parts: [{ text: msg.content }] 
+    }));
+    
+    // Payload structure for non-streaming REST API
+    const body = { 
+        contents, 
+        // **CRITICAL FIX: systemInstruction is top-level Content object**
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT_CONTENT }] }
+    }; 
+
     try {
         const response = await axios.post(url, body, { headers: { 'Content-Type': 'application/json' } });
         
@@ -42,4 +57,3 @@ export default async function handler(req, res) {
         res.status(500).json({ message: 'Error getting response.' });
     }
 }
-
