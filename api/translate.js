@@ -76,9 +76,11 @@ export default async function handler(req, res) {
   // 3. Prepare the request payload for the streaming REST API
   const payload = {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    // *** FINAL CRITICAL FIX: generationConfig is the correct field name ***
+    
+    // *** FINAL STRUCTURAL FIX: systemInstruction is a top-level peer to contents and generationConfig ***
+    systemInstruction: SYSTEM_INSTRUCTION, 
+
     generationConfig: { 
-      systemInstruction: SYSTEM_INSTRUCTION,
       temperature: 0.4, 
       maxOutputTokens: 1024 
     }
@@ -86,7 +88,7 @@ export default async function handler(req, res) {
 
   try {
     const geminiResponse = await fetch(
-      // URL remains the same, using :generateContent with alt=sse
+      // Correct Path: using :generateContent with alt=sse (stable streaming method for this path structure)
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?alt=sse&key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
