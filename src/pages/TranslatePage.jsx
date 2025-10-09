@@ -15,6 +15,9 @@ const loadingTips = [
     "Considering how different neurotypes might perceive this message...",
 ];
 
+// Define the current application version for logging
+const APP_VERSION = '2.1.1'; // Branding updated to Clarity Coach
+
 function TranslatePage() {
     const { mode } = useParams();
     const [isAdvancedMode, setIsAdvancedMode] = useState(false);
@@ -35,6 +38,10 @@ function TranslatePage() {
     const [aiResponse, setAiResponse] = useState(null);
     const [feedbackSuccess, setFeedbackSuccess] = useState(null);
     const [loadingMessage, setLoadingMessage] = useState(loadingTips[0]);
+    // NEW STATE for Golden Feedback Loop
+    const [editedResponse, setEditedResponse] = useState('');
+    const [goldenEditSaved, setGoldenEditSaved] = useState(false);
+
 
     useEffect(() => {
         let interval;
@@ -47,6 +54,16 @@ function TranslatePage() {
         }
         return () => clearInterval(interval);
     }, [loading]);
+
+    // Populate editedResponse when a new AI response is received
+    useEffect(() => {
+        if (aiResponse && aiResponse.response) {
+            // Remove HTML tags for the editable text area (clean the input for text-area)
+            const cleanResponse = aiResponse.response.replace(/<[^>]*>/g, '');
+            setEditedResponse(cleanResponse);
+            setGoldenEditSaved(false); // Reset saved status for new translation
+        }
+    }, [aiResponse]);
 
     const handleCopy = (textToCopy, fieldName) => {
         const textArea = document.createElement('textarea');
@@ -62,14 +79,20 @@ function TranslatePage() {
         document.body.removeChild(textArea);
     };
 
+    // MODIFIED handleSubmit for streaming
     const handleSubmit = async (event) => {
         event.preventDefault();
         setLoading(true);
         setError(null);
         setAiResponse(null);
         setFeedbackSuccess(null);
+        setEditedResponse('');
+        
         let finalSenderStyle = senderStyle;
         const textForClassification = mode === 'draft' ? (context || text) : text;
+        let classificationPromise = Promise.resolve({ data: { style: senderStyle } });
+
+        // 1. Handle AI classification if requested
         try {
             if (senderStyle === 'let-ai-decide') {
                 if (!textForClassification) {
@@ -77,9 +100,14 @@ function TranslatePage() {
                     setLoading(false);
                     return;
                 }
-                const classificationResponse = await axios.post('/api/classify-style', { text: textForClassification });
-                finalSenderStyle = classificationResponse.data.style;
+                // Use a standard post for the classification (this should be fast)
+                classificationPromise = axios.post('/api/classify-style', { text: textForClassification });
             }
+
+            const classificationResponse = await classificationPromise;
+            finalSenderStyle = classificationResponse.data.style;
+
+            // 2. Prepare the request body for translation
             const requestBody = { 
                 mode, text, context, interpretation, 
                 analyzeContext,
@@ -88,26 +116,129 @@ function TranslatePage() {
                 senderNeurotype, receiverNeurotype, 
                 senderGeneration, receiverGeneration 
             };
-            const translateResponse = await axios.post('/api/translate', requestBody);
-            setAiResponse(translateResponse.data);
+
+            // 3. Use fetch to handle the streaming response
+            const response = await fetch('/api/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || `HTTP error! Status: ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulatedText = '';
+            let finalAiResponse = null;
+
+            // 4. Read the stream chunk-by-chunk and accumulate the JSON body
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                accumulatedText += chunk;
+
+                // Simple temporary display of partial response to show progress (optional but good UX)
+                // Note: This relies on the AI outputting the JSON structure sequentially
+                setAiResponse({ 
+                    explanation: `*Generating...*`, 
+                    // Temporarily display the accumulated text for UX
+                    response: accumulatedText.replace(/<[^>]*>/g, '') 
+                });
+            }
+
+            // 5. Final parsing of the accumulated JSON text
+            try {
+                // Manually add the outer braces since the AI was told to output ONLY the content
+                // We also strip any leading/trailing whitespace or newlines
+                let fullJsonText = accumulatedText.trim();
+
+                // If the stream started successfully, it should already be the inner content
+                // Check if it's missing the final brace, and try to add it.
+                if (!fullJsonText.startsWith('{')) {
+                    fullJsonText = `{${fullJsonText}`;
+                }
+                if (!fullJsonText.endsWith('}')) {
+                    fullJsonText = `${fullJsonText}}`;
+                }
+
+                // Attempt to parse
+                finalAiResponse = JSON.parse(fullJsonText);
+                
+                // Set the final state
+                setAiResponse(finalAiResponse);
+
+            } catch (e) {
+                console.error("Failed to parse JSON response:", e, accumulatedText);
+                setError("AI generation completed, but the output was malformed. Please try again.");
+            }
+
         } catch (err) {
-            const message = err.response?.data?.message || 'An error occurred. Please try again.';
-            setError(message);
+            // Check for a specific error format if possible
+            let errorMessage = 'An error occurred. Please try again.';
+            try {
+                const errorJson = JSON.parse(err.message);
+                if (errorJson.message) errorMessage = errorJson.message;
+            } catch {
+                errorMessage = err.message || 'An error occurred. Please try again.';
+            }
+
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
     };
     
+    // NEW FUNCTION for Golden Feedback Loop
+    const handleSaveGoldenEdit = async () => {
+        // Prevent saving if no response exists, if it's already saved, or if the edit is identical to the cleaned original
+        if (!aiResponse || !aiResponse.response || !editedResponse || goldenEditSaved) return;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            // The AI's original response (with HTML) is the 'originalText'
+            const originalText = aiResponse.response;
+
+            const requestBody = {
+                mode,
+                version: APP_VERSION,
+                originalText,
+                editedText: editedResponse,
+                // Full context fields for analysis
+                text,
+                context,
+                interpretation,
+                analyzeContext
+            };
+
+            await axios.post('/api/golden-edit', requestBody);
+            setGoldenEditSaved(true);
+            setFeedbackSuccess('Excellent! Your edited response has been saved for training the next generation of the Coach.');
+        } catch (err) {
+            const message = err.response?.data?.message || 'Failed to save your edit. Please try again.';
+            setError(message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleReset = () => {
         setText(''); setContext(''); setInterpretation(''); setAnalyzeContext(''); setError(null);
-        setAiResponse(null); setFeedbackSuccess(null);
+        setAiResponse(null); setFeedbackSuccess(null); setEditedResponse(''); setGoldenEditSaved(false);
     };
 
     const handleFeedbackSubmit = async (feedbackData) => {
         try {
             const currentFeedback = aiResponse.feedback || {};
             const newFeedback = { ...currentFeedback, ...feedbackData };
-            await axios.post('/api/feedback', { ...newFeedback, mode, version: '2.1.0' });
+            // NOTE: This assumes /api/feedback is a working endpoint
+            await axios.post('/api/feedback', { ...newFeedback, mode, version: APP_VERSION });
             setFeedbackSuccess('Thank you! Your feedback has been saved.');
             setAiResponse(prev => ({ ...prev, feedback: newFeedback })); 
         } catch (err) {
@@ -210,15 +341,35 @@ function TranslatePage() {
                 <div className="response-container" aria-live="polite">
                     <div className="io-box">
                         <h3 className="box-title">{isDraftMode ? "How They Might Hear It (Explanation)" : "What They Likely Meant (Explanation)"}</h3>
+                        {/* The Explanation is still read-only HTML */}
                         <div className="ai-output" dangerouslySetInnerHTML={{ __html: aiResponse.explanation }} />
                         <Feedback type="explanation" onSubmit={handleFeedbackSubmit} isSuccess={!!aiResponse.feedback?.explanationRating} />
                     </div>
-                    <div className="io-box">
-                        <h3 className="box-title">{isDraftMode ? "The Translation (Suggested Draft)" : "The Translation (Suggested Response)"}</h3>
-                        <div className="ai-output" dangerouslySetInnerHTML={{ __html: aiResponse.response }} />
+                    <div className="io-box response-editable">
+                        <div className="box-header">
+                            <h3 className="box-title">{isDraftMode ? "The Translation (Suggested Draft)" : "The Translation (Suggested Response)"}</h3>
+                            {/* The 'Save Golden Edit' Button is added here */}
+                            <button 
+                                type="button" 
+                                className={`save-golden-edit-button ${goldenEditSaved ? 'saved' : ''}`}
+                                onClick={handleSaveGoldenEdit}
+                                disabled={loading || goldenEditSaved || !editedResponse || editedResponse === aiResponse.response.replace(/<[^>]*>/g, '')}
+                                aria-live="polite"
+                            >
+                                {goldenEditSaved ? 'Saved! Thank you.' : 'Save Golden Edit'}
+                            </button>
+                        </div>
+                        {/* The Response is now an editable textarea */}
+                        <textarea 
+                            className="ai-output editable-textarea"
+                            value={editedResponse}
+                            onChange={(e) => setEditedResponse(e.target.value)}
+                            rows={8} // Adjust rows as needed
+                        />
                         <Feedback type="response" onSubmit={handleFeedbackSubmit} isSuccess={!!aiResponse.feedback?.responseRating} />
                     </div>
-                    {feedbackSuccess && !aiResponse.feedback?.explanationRating && !aiResponse.feedback?.responseRating && <div className="success-message-global" role="alert">{feedbackSuccess}</div>}
+                    {/* Display global feedback success message */}
+                    {feedbackSuccess && <div className="success-message-global" role="alert">{feedbackSuccess}</div>}
                 </div>
             )}
         </div>

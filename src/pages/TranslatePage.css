@@ -24,8 +24,31 @@
 .copy-button:hover { background-color: var(--primary); color: white; }
 .io-box.user-input .box-title { color: var(--primary); }
 .io-box textarea { flex-grow: 1; width: 100%; min-height: 150px; padding: 0.75rem; border-radius: 4px; border: 1px solid var(--border); background-color: var(--background); color: var(--text-primary); font-size: 1rem; font-family: inherit; resize: vertical; }
+/* Styles for the AI Output (Read-only Explanation) */
 .ai-output { flex-grow: 1; padding: 0.5rem; border-radius: 4px; background-color: var(--background); min-height: 174px; text-align: left; }
 .ai-output p, .ai-output li { margin-bottom: 1rem; }
+/* Styles for the Editable AI Output (Suggested Response) */
+.editable-textarea {
+    width: 100%;
+    min-height: 174px;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background-color: var(--background);
+    color: var(--text-primary);
+    font-size: 1rem;
+    line-height: 1.5;
+    font-family: inherit;
+    resize: vertical; /* Allow vertical resizing by user */
+}
+/* Ensure the Explanation io-box renders the same as before */
+.ai-output:not(.editable-textarea) {
+    /* Resets for the read-only HTML explanation */
+    padding: 1rem; 
+    background-color: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
 .button-group { display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center; }
 .translate-button { background-image: linear-gradient(to right, #818cf8, #6366f1); color: white; border: none; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); transition: all 0.3s ease; min-width: 120px; text-align: center; }
 .translate-button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5); }
@@ -37,3 +60,38 @@
 .response-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 2rem; }
 .required-asterisk { color: #ff8080; font-weight: bold; }
 .success-message-global { grid-column: 1 / -1; margin-top: 1rem; padding: 0.75rem; border-radius: 4px; text-align: center; background-color: var(--success-bg); border: 1px solid var(--success-border); color: var(--success-text); font-weight: 500; }
+
+/* --- GOLDEN FEEDBACK LOOP STYLES --- */
+
+/* Align the title and the new Save button */
+.response-editable .box-header {
+    margin-bottom: 0.5rem; /* Reduce gap since the textarea is now padded */
+}
+
+.save-golden-edit-button {
+    background-color: #f59e0b; /* Tailwind amber-500 for a noticeable 'Golden' color */
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: background-color 0.2s, opacity 0.2s;
+    white-space: nowrap; /* Prevent wrapping on smaller screens */
+}
+
+.save-golden-edit-button:hover:not(:disabled) {
+    background-color: #d97706; /* A slightly darker amber */
+}
+
+.save-golden-edit-button:disabled {
+    background-color: var(--border);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.save-golden-edit-button.saved {
+    background-color: #10b981; /* Green/Emerald success color */
+}
