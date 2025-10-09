@@ -85,8 +85,8 @@ export default async function handler(req, res) {
 
   try {
     const geminiResponse = await fetch(
-      // *** THE CRITICAL CORRECTION IS HERE ***
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest/generateContentStream?key=${GEMINI_API_KEY}`,
+      // *** THE CRITICAL CORRECTION IS HERE: Restored the colon (:) separator ***
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContentStream?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: {
